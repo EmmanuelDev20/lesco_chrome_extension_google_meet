@@ -14,21 +14,22 @@
 // ─── Config ────────────────────────────────────────────────────────────────
 
 const CAPTION_SELECTOR = ".ygicle";
-const CAPTIONS_REGION  = '[aria-label="Captions"]';
-const PANEL_ID         = "lesco-overlay-panel";
-const DICT_PATH        = chrome.runtime.getURL("data/lesco_dictionary.json");
-const LETTER_IMG_BASE  = "https://lesco.cenarec.go.cr/assets/thumbnail/forma/CM_";
-const LETTER_MS        = 900;   // ms per finger-spell letter
+const CAPTIONS_REGION = '[aria-label="Captions"]';
+const PANEL_ID = "lesco-overlay-panel";
+const DICT_PATH = chrome.runtime.getURL("data/lesco_dictionary.json");
+const LETTER_IMG_BASE =
+  "https://lesco.cenarec.go.cr/assets/thumbnail/forma/CM_";
+const LETTER_MS = 900; // ms per finger-spell letter
 
 // ─── State ─────────────────────────────────────────────────────────────────
 
-let dictionary   = {};
-let lastText     = "";
-let signQueue    = [];
-let currentIdx   = 0;
-let playTimer    = null;
+let dictionary = {};
+let lastText = "";
+let signQueue = [];
+let currentIdx = 0;
+let playTimer = null;
 let captionObserver = null;
-let watchdogTimer   = null;
+let watchdogTimer = null;
 
 // ─── Normalize / lookup ────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ function normalize(word) {
 }
 
 function tokenize(text) {
-  return text.split(/\s+/).filter(w => w.length > 0);
+  return text.split(/\s+/).filter((w) => w.length > 0);
 }
 
 function findInDictionary(word) {
@@ -50,11 +51,11 @@ function findInDictionary(word) {
   if (!norm) return null;
   if (dictionary[norm]) return dictionary[norm];
   const candidates = [
-    norm.endsWith("s")     ? norm.slice(0, -1)        : null,
-    norm.endsWith("es")    ? norm.slice(0, -2)        : null,
-    norm.endsWith("ando")  ? norm.slice(0, -4) + "ar" : null,
+    norm.endsWith("s") ? norm.slice(0, -1) : null,
+    norm.endsWith("es") ? norm.slice(0, -2) : null,
+    norm.endsWith("ando") ? norm.slice(0, -4) + "ar" : null,
     norm.endsWith("iendo") ? norm.slice(0, -5) + "er" : null,
-    norm.endsWith("mente") ? norm.slice(0, -5)        : null,
+    norm.endsWith("mente") ? norm.slice(0, -5) : null,
   ];
   for (const c of candidates) {
     if (c && dictionary[c]) return dictionary[c];
@@ -63,8 +64,11 @@ function findInDictionary(word) {
 }
 
 function spellWord(rawWord) {
-  return rawWord.toUpperCase().replace(/[^A-Z]/g, "").split("")
-    .map(l => ({ type: "letter", letter: l, rawWord }));
+  return rawWord
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .split("")
+    .map((l) => ({ type: "letter", letter: l, rawWord }));
 }
 
 function buildQueue(text) {
@@ -97,7 +101,7 @@ function createPanel() {
     </div>
     <div id="lesco-main-view">
       <div id="lesco-active-sign">
-        <div class="lesco-idle">Esperando subtítulos...</div>
+        <div class="lesco-idle">Esperando subtítulos... <br>(Activa los subtítulos en Meet CC)</div>
       </div>
     </div>
     <div id="lesco-timeline"></div>
@@ -116,20 +120,31 @@ function createPanel() {
 
 function makeDraggable(el) {
   const header = el.querySelector("#lesco-header");
-  let dragging = false, sx, sy, ox, oy;
-  header.addEventListener("mousedown", e => {
+  let dragging = false,
+    sx,
+    sy,
+    ox,
+    oy;
+  header.addEventListener("mousedown", (e) => {
     if (e.target.closest("button")) return;
-    dragging = true; sx = e.clientX; sy = e.clientY;
-    const r = el.getBoundingClientRect(); ox = r.left; oy = r.top;
+    dragging = true;
+    sx = e.clientX;
+    sy = e.clientY;
+    const r = el.getBoundingClientRect();
+    ox = r.left;
+    oy = r.top;
     e.preventDefault();
   });
-  document.addEventListener("mousemove", e => {
+  document.addEventListener("mousemove", (e) => {
     if (!dragging) return;
     el.style.left = `${ox + e.clientX - sx}px`;
-    el.style.top  = `${oy + e.clientY - sy}px`;
-    el.style.right = "unset"; el.style.bottom = "unset";
+    el.style.top = `${oy + e.clientY - sy}px`;
+    el.style.right = "unset";
+    el.style.bottom = "unset";
   });
-  document.addEventListener("mouseup", () => { dragging = false; });
+  document.addEventListener("mouseup", () => {
+    dragging = false;
+  });
 }
 
 // Show panel — always, unless user explicitly closed it this session
@@ -166,17 +181,20 @@ function renderActiveSign(item) {
     video.playsInline = true;
     video.className = "lesco-active-video";
     video.addEventListener("ended", () => advanceQueue());
-    video.addEventListener("error", () => setTimeout(() => advanceQueue(), 300));
+    video.addEventListener("error", () =>
+      setTimeout(() => advanceQueue(), 300),
+    );
     container.appendChild(video);
     setWordLabel(item.rawWord);
-
   } else {
     // Finger-spell letter
     const img = document.createElement("img");
     img.src = `${LETTER_IMG_BASE}${item.letter}.jpg`;
     img.className = "lesco-active-letter";
     img.alt = item.letter;
-    img.onerror = () => { img.style.display = "none"; };
+    img.onerror = () => {
+      img.style.display = "none";
+    };
     container.appendChild(img);
 
     const badge = document.createElement("div");
@@ -208,8 +226,13 @@ function renderTimeline() {
     } else {
       const word = item.rawWord;
       const group = [];
-      while (i < signQueue.length && signQueue[i].type === "letter" && signQueue[i].rawWord === word) {
-        group.push(i); i++;
+      while (
+        i < signQueue.length &&
+        signQueue[i].type === "letter" &&
+        signQueue[i].rawWord === word
+      ) {
+        group.push(i);
+        i++;
       }
       chips.push({ indices: group, label: word, type: "spell" });
     }
@@ -217,17 +240,19 @@ function renderTimeline() {
 
   let activeEl = null;
 
-  chips.forEach(chip => {
+  chips.forEach((chip) => {
     const isActive = chip.indices.includes(currentIdx);
-    const isPast   = chip.indices[chip.indices.length - 1] < currentIdx;
+    const isPast = chip.indices[chip.indices.length - 1] < currentIdx;
 
     const el = document.createElement("div");
-    el.className = "lesco-chip" +
+    el.className =
+      "lesco-chip" +
       (isActive ? " lesco-chip-active" : "") +
-      (isPast   ? " lesco-chip-past"   : "") +
+      (isPast ? " lesco-chip-past" : "") +
       (chip.type === "spell" ? " lesco-chip-spell" : "");
     el.textContent = chip.label;
-    el.title = chip.type === "spell" ? `✍️ deletreando "${chip.label}"` : chip.label;
+    el.title =
+      chip.type === "spell" ? `✍️ deletreando "${chip.label}"` : chip.label;
 
     if (isPast || isActive) {
       el.addEventListener("mouseenter", () => jumpTo(chip.indices[0]));
@@ -239,7 +264,11 @@ function renderTimeline() {
 
   // Scroll active chip into view within the timeline
   if (activeEl) {
-    activeEl.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    activeEl.scrollIntoView({
+      inline: "center",
+      block: "nearest",
+      behavior: "smooth",
+    });
   }
 }
 
@@ -262,7 +291,10 @@ function advanceQueue() {
 }
 
 function jumpTo(idx) {
-  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+  if (playTimer) {
+    clearTimeout(playTimer);
+    playTimer = null;
+  }
   currentIdx = idx;
   playCurrentItem();
 }
@@ -272,9 +304,11 @@ function playCurrentItem() {
   renderActiveSign(signQueue[currentIdx]);
   renderTimeline();
 
-  const signs   = signQueue.filter(x => x.type === "sign").length;
-  const letters = signQueue.filter(x => x.type === "letter").length;
-  setStatus(`${currentIdx + 1} / ${signQueue.length}  ·  ${signs} seña${signs !== 1 ? "s" : ""}  ·  ${letters} letra${letters !== 1 ? "s" : ""} deletreadas`);
+  const signs = signQueue.filter((x) => x.type === "sign").length;
+  const letters = signQueue.filter((x) => x.type === "letter").length;
+  setStatus(
+    `${currentIdx + 1} / ${signQueue.length}  ·  ${signs} seña${signs !== 1 ? "s" : ""}  ·  ${letters} letra${letters !== 1 ? "s" : ""} deletreadas`,
+  );
 }
 
 // ─── Caption handling ──────────────────────────────────────────────────────
@@ -286,7 +320,10 @@ function handleNewCaption(text) {
   const newQueue = buildQueue(text);
   if (!newQueue.length) return;
 
-  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+  if (playTimer) {
+    clearTimeout(playTimer);
+    playTimer = null;
+  }
   signQueue = newQueue;
 
   ensurePanelVisible();
@@ -304,14 +341,16 @@ function attachCaptionObserver() {
   captionObserver = new MutationObserver(() => {
     const divs = document.querySelectorAll(CAPTION_SELECTOR);
     const text = Array.from(divs)
-      .map(el => el.textContent.trim())
-      .filter(t => t.length > 0)
+      .map((el) => el.textContent.trim())
+      .filter((t) => t.length > 0)
       .join(" ");
     if (text) handleNewCaption(text);
   });
 
   captionObserver.observe(region, {
-    childList: true, subtree: true, characterData: true,
+    childList: true,
+    subtree: true,
+    characterData: true,
   });
 
   console.log("[LESCO] Observer attached ✅");
@@ -325,7 +364,10 @@ function startWatchdog() {
     const region = document.querySelector(CAPTIONS_REGION);
     if (!region) {
       // Captions turned off — disconnect and wait
-      if (captionObserver) { captionObserver.disconnect(); captionObserver = null; }
+      if (captionObserver) {
+        captionObserver.disconnect();
+        captionObserver = null;
+      }
       return;
     }
     // Region exists — make sure we're still observing it
@@ -356,13 +398,15 @@ async function init() {
   try {
     const resp = await fetch(DICT_PATH);
     dictionary = await resp.json();
-    console.log(`[LESCO] Dictionary loaded: ${Object.keys(dictionary).length} entries`);
+    console.log(
+      `[LESCO] Dictionary loaded: ${Object.keys(dictionary).length} entries`,
+    );
   } catch (err) {
     console.error("[LESCO] Failed to load dictionary:", err);
   }
 
   createPanel();
-  ensurePanelVisible();   // show immediately on load
+  ensurePanelVisible(); // show immediately on load
   startObserving();
 }
 
