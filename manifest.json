@@ -2,10 +2,16 @@
   "manifest_version": 3,
   "name": "LESCO Translator - Lengua de Señas CR",
   "short_name": "LESCO",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Traduce los subtítulos de Google Meet a Lengua de Señas Costarricense (LESCO) en tiempo real.",
   "permissions": ["activeTab", "storage"],
-  "host_permissions": ["https://meet.google.com/*"],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://lesco.cenarec.go.cr/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://meet.google.com/*"],
@@ -26,6 +32,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "LESCO Translator"
+    "default_title": "LESCO Translator",
+    "default_popup": "popup.html"
   }
 }

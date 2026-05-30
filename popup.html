@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LESCO – Historial</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 340px;
+      font-family: "Google Sans", Roboto, Arial, sans-serif;
+      background: #0e0e1c;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      max-height: 600px;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px 9px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 14px; font-weight: 600; color: #a8d8ff; }
+    .btn-clear {
+      font-size: 11px; color: rgba(255,255,255,0.3);
+      background: none; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; padding: 3px 8px; cursor: pointer;
+    }
+    .btn-clear:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+    /* ── Mini player ── */
+    #mini-player {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 12px 8px;
+      flex-shrink: 0;
+    }
+    #mini-player.active { display: flex; }
+
+    #mini-player video {
+      width: 200px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #1a1a2e;
+      border: 2px solid rgba(168,216,255,0.2);
+      display: block;
+    }
+    #mini-player .mp-word {
+      font-size: 13px; font-weight: 600; color: #a8d8ff;
+      margin: 6px 0 4px; text-align: center;
+    }
+    #mini-player .mp-nav {
+      display: flex; align-items: center; gap: 10px;
+    }
+    #mini-player .mp-nav button {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px; color: #fff;
+      width: 34px; height: 28px; font-size: 13px; cursor: pointer;
+    }
+    #mini-player .mp-nav button:hover:not(:disabled) { background: rgba(255,255,255,0.18); }
+    #mini-player .mp-nav button:disabled { opacity: 0.25; cursor: default; }
+    #mini-player .mp-counter { font-size: 11px; color: rgba(255,255,255,0.45); min-width: 40px; text-align: center; }
+    #mini-player .mp-close {
+      align-self: flex-end; margin-top: -2px; margin-bottom: 4px;
+      background: none; border: none; color: rgba(255,255,255,0.3);
+      font-size: 13px; cursor: pointer;
+    }
+    #mini-player .mp-close:hover { color: #fff; }
+
+    /* ── Sessions list ── */
+    #sessions-list {
+      flex: 1; overflow-y: auto; padding: 8px 8px 12px;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+    #sessions-list::-webkit-scrollbar { width: 4px; }
+    #sessions-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+    .empty-state {
+      text-align: center; padding: 36px 20px;
+      font-size: 13px; color: rgba(255,255,255,0.3); line-height: 1.7;
+    }
+
+    /* ── Session card ── */
+    .session-card {
+      border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 6px; overflow: hidden; cursor: pointer;
+    }
+    .session-card:hover { border-color: rgba(168,216,255,0.2); }
+    .session-card.expanded { border-color: rgba(168,216,255,0.25); }
+
+    .session-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px; background: rgba(255,255,255,0.04); user-select: none;
+    }
+    .session-date { font-size: 12px; font-weight: 500; color: #a8d8ff; }
+    .session-time { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .session-count {
+      font-size: 10px; background: rgba(168,216,255,0.1); color: #a8d8ff;
+      padding: 3px 8px; border-radius: 20px; border: 1px solid rgba(168,216,255,0.2);
+    }
+    .session-chevron {
+      font-size: 10px; color: rgba(255,255,255,0.3);
+      margin-left: 8px; transition: transform 0.2s;
+    }
+    .session-card.expanded .session-chevron { transform: rotate(180deg); }
+
+    /* ── Phrases ── */
+    .phrases-list {
+      display: none; padding: 5px 8px 8px;
+      max-height: 260px; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+    .phrases-list::-webkit-scrollbar { width: 3px; }
+    .phrases-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    .session-card.expanded .phrases-list { display: block; }
+
+    .phrase-row {
+      padding: 6px 8px; border-radius: 8px; margin-bottom: 4px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+    }
+    .phrase-row:last-child { margin-bottom: 0; }
+    .phrase-row:hover { border-color: rgba(255,255,255,0.1); }
+
+    .phrase-top {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;
+    }
+    .phrase-texts { flex: 1; min-width: 0; }
+    .phrase-time { font-size: 9px; color: rgba(255,255,255,0.25); margin-bottom: 2px; }
+    .phrase-spanish { font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.4; }
+
+    .btn-play-phrase {
+      flex-shrink: 0;
+      background: rgba(168,216,255,0.1); border: 1px solid rgba(168,216,255,0.25);
+      border-radius: 7px; color: #a8d8ff;
+      width: 28px; height: 28px; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-play-phrase:hover { background: rgba(168,216,255,0.22); }
+    .btn-play-phrase.no-video { opacity: 0.3; cursor: default; }
+
+    .phrase-gloss {
+      display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px;
+    }
+    .gloss-chip {
+      font-size: 9px; font-weight: 600; color: #a8d8ff;
+      background: rgba(168,216,255,0.1); padding: 1px 5px; border-radius: 4px;
+    }
+    .gloss-chip.no-video {
+      color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.06);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-title">🤟 LESCO — Historial</span>
+    <button class="btn-clear" id="btn-clear">Borrar todo</button>
+  </div>
+
+  <!-- Mini player (aparece al presionar ▶ en una frase) -->
+  <div id="mini-player">
+    <button class="mp-close" id="mp-close">✕</button>
+    <video id="mp-video" muted playsinline></video>
+    <div class="mp-word" id="mp-word">—</div>
+    <div class="mp-nav">
+      <button id="mp-prev">◀</button>
+      <span class="mp-counter" id="mp-counter">—</span>
+      <button id="mp-next">▶</button>
+    </div>
+  </div>
+
+  <div id="sessions-list">
+    <div class="empty-state">
+      Aún no hay sesiones guardadas.<br>
+      Abre Google Meet y activa los subtítulos (CC).
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

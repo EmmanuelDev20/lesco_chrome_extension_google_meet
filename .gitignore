@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# El diccionario se genera con el scraper — no se versiona
+# (pesa varios MB y depende de terceros)
+data/lesco_dictionary.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+scraper/__pycache__/
+
+# Node (por si alguien agrega build tools)
+node_modules/
+dist/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
